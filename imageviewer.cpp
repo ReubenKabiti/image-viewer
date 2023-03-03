@@ -47,7 +47,6 @@ void ImageViewer::openDir(QString dirname)
     {
         if (file.endsWith(".png") || file.endsWith(".jpg") || file.endsWith(".jpeg"))
         {
-//            m_images.append(QPixmap(dir.absoluteFilePath(file)));
             imagesStr.append(dir.absoluteFilePath(file));
         }
     }
@@ -108,7 +107,10 @@ void ImageViewer::setCounter()
 {
     QString text = "Image ";
     text += QString::number(m_currentImage+1);
-    text += "/";
+    text += " of ";
+    int length = m_images.length();
+    if (length == 0)
+        length = 1;
     text += QString::number(m_images.length());
 
     ui->counter->setText(text);

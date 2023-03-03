@@ -6,9 +6,9 @@ I have tried all my best to not use any platform specific code in this project. 
     - Build the project with Ctrl + B
 
 You can run by either:
-    - Going into the build directory and running the ImageViewer executable
-    - Pressing Ctrl + R inside of Qt creator
-    - Or in Qt creator, go to , Menu -> Build -> Run
+ - Going into the build directory and running the ImageViewer executable
+ - Pressing Ctrl + R inside of Qt creator
+ - Or in Qt creator, go to , Menu -> Build -> Run
 
 # How to use image viewer
     

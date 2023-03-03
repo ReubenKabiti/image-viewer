@@ -6,6 +6,6 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     ImageViewer w;
-    w.show();
+    w.showMaximized();
     return a.exec();
 }

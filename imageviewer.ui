@@ -26,6 +26,9 @@
      </widget>
     </item>
     <item>
+     <layout class="QHBoxLayout" name="loading"/>
+    </item>
+    <item>
      <layout class="QHBoxLayout" name="content">
       <item>
        <layout class="QVBoxLayout" name="imageview">

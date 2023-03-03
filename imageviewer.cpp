@@ -2,6 +2,8 @@
 #include "ui_imageviewer.h"
 #include <QFileDialog>
 #include <QDir>
+#include <QProgressBar>
+#include <thread>
 
 ImageViewer::ImageViewer(QWidget *parent)
     : QMainWindow(parent)
@@ -11,17 +13,48 @@ ImageViewer::ImageViewer(QWidget *parent)
     openDir(QDir::currentPath());
 }
 
+void loadImagesAsync(ImageViewer * viewer, QStringList imagesStr, QProgressBar * bar, QLabel * label)
+{
+    float current = 0;
+
+    for (auto image : imagesStr)
+    {
+        float per = (current+1) / float(imagesStr.length()) * 100;
+        bar->setValue(per);
+
+        viewer->images()->append(QPixmap(image));
+        current ++;
+    }
+    viewer->doneLoadingImages();
+    delete bar;
+    delete label;
+}
+
 void ImageViewer::openDir(QString dirname)
 {
+    auto label = new QLabel("Loading Images....");
+    auto progressBar = new QProgressBar(this);
+    progressBar->setValue(0);
+    ui->loading->insertWidget(0, progressBar);
+    ui->loading->insertWidget(0, label);
+
     auto dir = QDir(dirname);
     m_images.clear();
+
+    QStringList imagesStr;
+
     for (auto file : dir.entryList())
     {
-        if (file.endsWith(".png") || file.endsWith(".jpg"))
+        if (file.endsWith(".png") || file.endsWith(".jpg") || file.endsWith(".jpeg"))
         {
-            m_images.append(dir.absoluteFilePath(file));
+//            m_images.append(QPixmap(dir.absoluteFilePath(file)));
+            imagesStr.append(dir.absoluteFilePath(file));
         }
     }
+
+    std::thread thread(loadImagesAsync, this, imagesStr, progressBar, label);
+    thread.detach();
+
     drawCurrentImage();
     setCounter();
 }
@@ -31,12 +64,17 @@ ImageViewer::~ImageViewer()
     delete ui;
 }
 
+void ImageViewer::doneLoadingImages()
+{
+    drawCurrentImage();
+    setCounter();
+}
+
 void ImageViewer::drawCurrentImage()
 {
     if (m_images.length() == 0)
         return;
-    auto filename = m_images[m_currentImage];
-    QPixmap map(filename);
+    auto map = m_images[m_currentImage];
 
     /*
      * Clamp the image to fit the screen if its size is bigger than that of the screen

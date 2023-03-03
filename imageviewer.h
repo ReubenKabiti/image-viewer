@@ -15,6 +15,10 @@ public:
     ImageViewer(QWidget *parent = nullptr);
     ~ImageViewer();
 
+    inline QList<QPixmap> * images() { return &m_images; }
+
+    void doneLoadingImages();
+
 
 private slots:
 
@@ -29,7 +33,7 @@ private slots:
 private:
     Ui::ImageViewer *ui;
     int m_currentImage = 0;
-    QStringList m_images;
+    QList<QPixmap> m_images;
 
     void drawCurrentImage();
 };

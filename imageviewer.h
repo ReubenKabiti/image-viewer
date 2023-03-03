@@ -2,6 +2,7 @@
 #define IMAGEVIEWER_H
 
 #include <QMainWindow>
+#include <map>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class ImageViewer; }
@@ -15,10 +16,6 @@ public:
     ImageViewer(QWidget *parent = nullptr);
     ~ImageViewer();
 
-    inline QList<QPixmap> * images() { return &m_images; }
-
-    void doneLoadingImages();
-
 
 private slots:
 
@@ -28,13 +25,21 @@ private slots:
     void setCounter();
     void openDir(QString dirname);
 
+
     void on_actionOpen_Folder_triggered();
 
 private:
     Ui::ImageViewer *ui;
-    int m_currentImage = 0;
-    QList<QPixmap> m_images;
+    QStringList m_imagePaths;
+    int m_currentImageIndex = 0;
+    const unsigned int MAX_IMAGES = 20;
+
+    std::map<int, QPixmap> m_cache;
+
+private:
 
     void drawCurrentImage();
+    QPixmap * currentImage();
+
 };
 #endif // IMAGEVIEWER_H

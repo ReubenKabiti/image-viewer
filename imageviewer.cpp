@@ -2,8 +2,7 @@
 #include "ui_imageviewer.h"
 #include <QFileDialog>
 #include <QDir>
-#include <QProgressBar>
-#include <thread>
+
 
 ImageViewer::ImageViewer(QWidget *parent)
     : QMainWindow(parent)
@@ -13,47 +12,27 @@ ImageViewer::ImageViewer(QWidget *parent)
     openDir(QDir::currentPath());
 }
 
-void loadImagesAsync(ImageViewer * viewer, QStringList imagesStr, QProgressBar * bar, QLabel * label)
-{
-    float current = 0;
-
-    for (auto image : imagesStr)
-    {
-        float per = (current+1) / float(imagesStr.length()) * 100;
-        bar->setValue(per);
-
-        viewer->images()->append(QPixmap(image));
-        current ++;
-    }
-    viewer->doneLoadingImages();
-    delete bar;
-    delete label;
-}
 
 void ImageViewer::openDir(QString dirname)
 {
-    auto label = new QLabel("Loading Images....");
-    auto progressBar = new QProgressBar(this);
-    progressBar->setValue(0);
-    ui->loading->insertWidget(0, progressBar);
-    ui->loading->insertWidget(0, label);
+    m_currentImageIndex = 0;
+    m_cache.clear();
+    m_imagePaths.clear();
 
-    auto dir = QDir(dirname);
-    m_images.clear();
-
-    QStringList imagesStr;
+    QDir dir(dirname);
 
     for (auto file : dir.entryList())
     {
-        if (file.endsWith(".png") || file.endsWith(".jpg") || file.endsWith(".jpeg"))
+        if
+        (
+                file.endsWith(".png") ||
+                file.endsWith(".jpg") ||
+                file.endsWith(".jpeg")
+        )
         {
-            imagesStr.append(dir.absoluteFilePath(file));
+            m_imagePaths.append(dir.absoluteFilePath(file));
         }
     }
-
-    std::thread thread(loadImagesAsync, this, imagesStr, progressBar, label);
-    thread.detach();
-
     drawCurrentImage();
     setCounter();
 }
@@ -63,18 +42,14 @@ ImageViewer::~ImageViewer()
     delete ui;
 }
 
-void ImageViewer::doneLoadingImages()
-{
-    drawCurrentImage();
-    setCounter();
-}
 
 void ImageViewer::drawCurrentImage()
 {
-    if (m_images.length() == 0)
-        return;
-    auto map = m_images[m_currentImage];
 
+    auto mapPtr = currentImage();
+    if (mapPtr == nullptr)
+        return;
+    auto map = *mapPtr;
     /*
      * Clamp the image to fit the screen if its size is bigger than that of the screen
      * The extra calculations are there to make sure the aspect ratio of the image stays the same so that the
@@ -103,36 +78,50 @@ void ImageViewer::drawCurrentImage()
     ui->label->setPixmap(map);
 }
 
+QPixmap *ImageViewer::currentImage()
+{
+    if (m_imagePaths.size() == 0)
+        return nullptr;
+
+    if (m_cache.count(m_currentImageIndex) == 0)
+    {
+        if (m_cache.size() >= MAX_IMAGES)
+        {
+            m_cache.erase(m_cache.begin());
+        }
+        m_cache[m_currentImageIndex] = QPixmap(m_imagePaths[m_currentImageIndex]);
+    }
+
+    return &m_cache[m_currentImageIndex];
+}
+
 void ImageViewer::setCounter()
 {
     QString text = "Image ";
-    text += QString::number(m_currentImage+1);
+    text += QString::number(m_currentImageIndex+1);
     text += " of ";
-    int length = m_images.length();
+    int length = m_imagePaths.length();
     if (length == 0)
         length = 1;
-    text += QString::number(m_images.length());
+    text += QString::number(m_imagePaths.length());
 
     ui->counter->setText(text);
 }
 
 void ImageViewer::on_backButton_clicked()
 {
-    if (m_currentImage == 0)
-        m_currentImage = m_images.length() - 1;
-    else
-        m_currentImage--;
+    m_currentImageIndex--;
+    if (m_currentImageIndex < 0)
+        m_currentImageIndex = m_imagePaths.size() - 1;
     drawCurrentImage();
     setCounter();
 }
 
-
 void ImageViewer::on_nextButton_clicked()
-{
-    if (m_currentImage == m_images.length() - 1)
-        m_currentImage = 0;
-    else
-        m_currentImage++;
+{    
+    m_currentImageIndex++;
+    if (m_currentImageIndex >= m_imagePaths.size() - 1)
+        m_currentImageIndex = 0;
     drawCurrentImage();
     setCounter();
 }
